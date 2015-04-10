@@ -127,3 +127,43 @@ pred Figure215 [m: StateMachine] {
 
 run Figure215 for 2 Prop, 3 State, 1 StateMachine
 
+
+
+/**************************************************************************************
+  Part II: Implement the following
+                a. NoCycle predicate that says a state s that has property p can not be
+                   within a cycle. A cycle can be detected if that state is reachable from
+                   itself through 'next'.
+                b. EventuallyFails predicate that says the model can start from an initial
+                    state where it can eventually reach a state where p fails and remain
+                    so from there onwards.
+                c. Check if NoCycle => EventuallyFails and vice versa
+***************************************************************************************/
+
+// For all states that are reachable from init, if the state has p property, then that state
+// can not exists in any cycle.
+//pred NoCycle [m: StateMachine, p: Prop] { all s: (m.init).*(m.next) | (p in s.prop) => s not in s.*(m.next) }
+pred NoCycle [m: StateMachine, p: Prop] {
+	all s: m.states | 
+		(p in s.prop) => { all t: (m.init).*(m.next) | (t in t.*(m.next)) => (s not in t.*(m.next)) }
+}
+
+run NoCycle for 5 State, 3 Prop, 1 StateMachine
+
+// For all states reachable from init, if that state does not have p property, then
+// for all states reachable from that state, p is unsatisfied.  
+pred EventuallyFails [m: StateMachine, p: Prop] {
+	all s: (m.init).*(m.next) | 
+		(p not in s.prop) => { all t: s.*(m.next) | p not in t.prop }
+}
+
+run EventuallyFails for 5 State, 3 Prop, 1 StateMachine
+
+assert Implies2 { all m: StateMachine, p: Prop | NoCycle[m,p] => EventuallyFails[m,p] }
+
+check Implies2 for 6 State, 3 Prop, 1 StateMachine
+
+
+assert Converse2 { all m: StateMachine, p: Prop | EventuallyFails[m,p] => NoCycle[m,p] }
+
+check Converse2 for 6 State, 3 Prop, 1 StateMachine
