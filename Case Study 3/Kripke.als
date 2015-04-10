@@ -37,7 +37,7 @@ sig StateMachine {
 	some final
 	
 	// Initial and final states are distinct
-	no init & final
+	no (init & final)
 
 	// For all final states, if there'a next state, then its that state itself
 	all f: final | f.next in { f }
@@ -46,7 +46,7 @@ sig StateMachine {
 	some s: (states - final) | some s.next and s.next in final
 
 	// Initial state transitions need to be a non-initial state
-	no init.next & init
+	no (init.next & init)
 }
 
 pred show { }
@@ -110,7 +110,7 @@ assert Converse { all m: StateMachine, p: Prop | Reachability[m, p] => Liveness[
 // As expected the Converse is not true because Reachability requires just a single path
 // from init to reach to the state that contains p. But that does not mean for every other
 // state in the model, there exists a path from that state to the state having property p.
-check Converse for 3
+check Converse for exactly 5 State, exactly 3 Prop, exactly 1 StateMachine
 
 
 /**************************************************************************************
@@ -125,7 +125,7 @@ pred Figure215 [m: StateMachine] {
 	all x,y: m.states | (x.prop = y.prop) => (x = y)
 }
 
-run Figure215 for 2 Prop, 3 State, 1 StateMachine
+run Figure215 for exactly 2 Prop, exactly 3 State, exactly 1 StateMachine
 
 
 
@@ -142,13 +142,14 @@ run Figure215 for 2 Prop, 3 State, 1 StateMachine
 
 // For all states that are reachable from init, if the state has p property, then that state
 // can not exists in any cycle.
-//pred NoCycle [m: StateMachine, p: Prop] { all s: (m.init).*(m.next) | (p in s.prop) => s not in s.*(m.next) }
 pred NoCycle [m: StateMachine, p: Prop] {
+	// since the requirement did not say the states need to reachable from initial state,
+    // we consider all the states
 	all s: m.states | 
 		(p in s.prop) => { all t: (m.init).*(m.next) | (t in t.*(m.next)) => (s not in t.*(m.next)) }
 }
 
-run NoCycle for 5 State, 3 Prop, 1 StateMachine
+run NoCycle for exactly 5 State, exactly 3 Prop, exactly 1 StateMachine
 
 // For all states reachable from init, if that state does not have p property, then
 // for all states reachable from that state, p is unsatisfied.  
@@ -157,13 +158,13 @@ pred EventuallyFails [m: StateMachine, p: Prop] {
 		(p not in s.prop) => { all t: s.*(m.next) | p not in t.prop }
 }
 
-run EventuallyFails for 5 State, 3 Prop, 1 StateMachine
+run EventuallyFails for exactly 5 State, exactly 3 Prop, exactly 1 StateMachine
 
 assert Implies2 { all m: StateMachine, p: Prop | NoCycle[m,p] => EventuallyFails[m,p] }
 
-check Implies2 for 6 State, 3 Prop, 1 StateMachine
+check Implies2 for exactly 6 State, exactly 3 Prop, exactly 1 StateMachine
 
 
 assert Converse2 { all m: StateMachine, p: Prop | EventuallyFails[m,p] => NoCycle[m,p] }
 
-check Converse2 for 6 State, 3 Prop, 1 StateMachine
+check Converse2 for exactly 6 State, exactly 3 Prop, exactly 1 StateMachine
